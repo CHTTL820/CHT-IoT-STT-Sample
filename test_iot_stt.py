@@ -9,6 +9,7 @@ logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 
 def run():
     lens = 0
+    #支援辨識pcm-16,16kHz語音
     file = open('今天天氣很好.raw', 'rb')
     DataBuffer = file.read()
     lens = len(DataBuffer)
