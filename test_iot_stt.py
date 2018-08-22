@@ -68,10 +68,5 @@ def run():
                     print (" final %s, %f\n" % (res.text, time.time() - gStartTime))
                 j = lens+100
                 break
-            
-        #步驟五:可以再跟server要辨識結果
-        #header = {'AsrReferenceId':handle}
-        #res = session.get('http://iot.cht.com.tw/api/chtlasr/MyServlet/tlasr', params=header)
-        #print ("%s = %f\n" % (res.text,time.time() - gStartTime))
     
 run()
