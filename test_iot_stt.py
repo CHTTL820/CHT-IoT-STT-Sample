@@ -26,8 +26,17 @@ def run():
     res = session.post('http://iot.cht.com.tw/api/chtlasr/MyServlet/tlasr', params=header, data="")
 
     #步驟三:取得ASR Reference Id, 用來告訴server這些語音buffer是同一次辨識
-    handle = str(res.text).split(';')[0]
-    print (handle)
+    res_json = json.loads(res.text)
+    ResulsStatus = res_json["ResultStatus"]
+    if(ResulsStatus != "Success"):
+        print("ErrorMsg:"+res_json["ErrorMessage"])
+    
+    handle=res_json["AsrReferenceId"]
+
+
+    print('post Action:connect:(',res.text,')')
+    print('handle:(',handle,')')
+
     if str(res.text).find('fail') == -1: 
         j = 0
         while j < lens:
@@ -53,20 +62,25 @@ def run():
             print (" get text from server %s, %f\n" % (res.text, time.time() - gStartTime))
             #Server通知client, 切到語音，有辨識結果，可以停止送語音過來，並取得辨識結果
             #client通知Server停送語音。另一種情形，如果Server還沒切到音，client要主動停止，也請送SpeechEnd通知Server，取回目前辨識結果。
-            #if str(res.text).find('result') != -1 or (j == lens):
-            if str(res.text.encode('utf-8')).find('result') != -1 or (j == lens):
-                header = {
-                    'Action':'syncData',
-                    'AsrReferenceId':handle,
-                    'ByteNum':0,
-                    'SpeechEnd':'y'
-                }
-                res = session.post('http://iot.cht.com.tw/api/chtlasr/MyServlet/tlasr', params=header, data="")
-                if str(res.text.encode('utf-8')).find('fail') != -1:
-                    print (" No result...")
-                else:
-                    print (" final %s, %f\n" % (res.text, time.time() - gStartTime))
-                j = lens+100
-                break
-    
+            res_json = json.loads(res.text)
+            ResulsStatus = res_json["ResultStatus"]
+            if(ResulsStatus != "Success"):
+                print("ErrorMsg:"+res_json["ErrorMessage"])
+            else:
+                SpeechGot = res_json["SpeechGot"]
+                RecognitionDone = res_json["RecognitionDone"]
+                if SpeechGot == 1 or RecognitionDone == 1  or (j == lens):
+                    header = {
+                        'Action':'syncData',
+                        'AsrReferenceId':handle,
+                        'ByteNum':0,
+                        'SpeechEnd':'y'
+                    }
+                    res = session.post('http://iot.cht.com.tw/api/chtlasr/MyServlet/tlasr', params=header, data="")
+                    if str(res.text.encode('utf-8')).find('fail') != -1:
+                        print (" No result...")
+                    else:
+                        print (" final %s, %f\n" % (res.text, time.time() - gStartTime))
+                    j = lens+100
+                    break
 run()
