@@ -39,12 +39,12 @@ def run():
 
     if str(res.text).find('fail') == -1: 
         j = 0
-        while j < lens:
+        while j < lens: #支援streaming辨識，可以邊錄邊傳，此範例將音檔以每4800 byte進行傳送，以模擬邊錄邊傳，透過以下API可以將音訊即時傳至後端辨識
             bytessend = 4800
             if(j + bytessend > lens):
                 bytessend = lens - j
                 
-            #步驟四:開始傳送音檔buffer
+            #步驟四:開始傳送音訊buffer
             gSyncTime=time.time()
             header = {
             'Action':'syncData',
@@ -63,7 +63,7 @@ def run():
             #Server通知client, 切到語音，有辨識結果，可以停止送語音過來，並取得辨識結果
             #client通知Server停送語音。另一種情形，如果Server還沒切到音，client要主動停止，也請送SpeechEnd通知Server，取回目前辨識結果。
             res_json = json.loads(res.text)
-            ResulsStatus = res_json["ResultStatus"]
+            ResulsStatus = res_json["ResultStatus"]#由回傳的JSON欄位取得辨識狀態與結果
             if(ResulsStatus != "Success"):
                 print("ErrorMsg:"+res_json["ErrorMessage"])
             else:
