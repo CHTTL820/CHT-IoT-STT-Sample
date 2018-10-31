@@ -15,6 +15,7 @@ def run():
     lens = len(DataBuffer)
     
     gStartTime = time.time()
+    gTimeToSync = 0.15
     #步驟一:設定參數
     header = {
     'Action':'connect',
@@ -45,7 +46,6 @@ def run():
                 bytessend = lens - j
                 
             #步驟四:開始傳送音訊buffer
-            gSyncTime=time.time()
             header = {
             'Action':'syncData',
             'AsrReferenceId':handle,
@@ -55,10 +55,13 @@ def run():
             res = session.post('http://iot.cht.com.tw/api/chtlasr/MyServlet/tlasr', params=header, data=DataBuffer[j:j+bytessend])
             j = j + bytessend
 
-            if(time.time()-gSyncTime) > 0.15:
+            #模擬streaming錄音時間，送0.15sec語音
+            if(time.time()-gStartTime) > gTimeToSync:
                 print ' '
             else:#模擬streaming,等時間到再送
-                time.sleep(0.15-(time.time()-gSyncTime))
+                time.sleep(gTimeToSync-(time.time()-gStartTime))
+            gTimeToSync = gTimeToSync + 0.15
+            
             print (" get text from server %s, %f\n" % (res.text, time.time() - gStartTime))
             #Server通知client, 切到語音，有辨識結果，可以停止送語音過來，並取得辨識結果
             #client通知Server停送語音。另一種情形，如果Server還沒切到音，client要主動停止，也請送SpeechEnd通知Server，取回目前辨識結果。
