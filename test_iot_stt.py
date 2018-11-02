@@ -40,8 +40,8 @@ def run():
 
     if str(res.text).find('fail') == -1: 
         j = 0
-        while j < lens: #支援streaming辨識，可以邊錄邊傳，此範例將音檔以每4800 byte進行傳送，以模擬邊錄邊傳，透過以下API可以將音訊即時傳至後端辨識
-            bytessend = 4800
+        while j < lens: #支援streaming辨識，可以邊錄邊傳，此範例將音檔以每4800 byte(0.15秒)進行傳送，以模擬邊錄邊傳，透過以下API可以將音訊即時傳至後端辨識
+            bytessend = 4800 #每次傳送長度，需進行調教，來達到較佳的辨識速度，建議值為0.08秒~0.15秒之間
             if(j + bytessend > lens):
                 bytessend = lens - j
                 
