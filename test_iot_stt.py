@@ -3,6 +3,7 @@ import logging
 import thread
 import time
 import requests
+from requests import Request,Session
 import json
 
 logging.basicConfig(level=logging.DEBUG, format="%(message)s")
@@ -10,21 +11,26 @@ logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 def run():
     lens = 0
     #支援辨識pcm-16,16kHz語音
-    file = open('今天天氣很好.raw', 'rb')
+    file = open('測試音檔.raw', 'rb')
     DataBuffer = file.read()
     lens = len(DataBuffer)
     
     gStartTime = time.time()
     gTimeToSync = 0.15
     #步驟一:設定參數
-    header = {
-    'Action':'connect',
-    'ClientId':'Test' #區別每個使用者的unique id, 請自行定義
+    param = {
+    'Action':'connect'
     }
     
+    header_API_Key = {
+        'X-API-Key':'b5c21229-bda4-4cfb-bb64-axxxxxxxxxxx', #請自行至https://iot.cht.com.tw/iot/appkey 申請API金鑰
+        'Content-type':'application/octet-stream' 
+    }
     #步驟二:開始連線，因為要用http 1.1 keep-alive python必須用session
     session = requests.Session()
-    res = session.post('http://iot.cht.com.tw/api/chtlasr/MyServlet/tlasr', params=header, data="")
+    
+    GWurl= 'http://iot.cht.com.tw/apis/CHTIoT/chtlasr/v2/MyServlet/tlasr'
+    res = session.post(GWurl, headers=header_API_Key, params=param, data="")
 
     #步驟三:取得ASR Reference Id, 用來告訴server這些語音buffer是同一次辨識
     res_json = json.loads(res.text)
@@ -46,18 +52,18 @@ def run():
                 bytessend = lens - j
                 
             #步驟四:開始傳送音訊buffer，取得辨識狀態
-            header = {
+            param = {
             'Action':'syncData',
             'AsrReferenceId':handle,
             'ByteNum':bytessend,
             'SpeechEnd':'n'
             }
-            res = session.post('http://iot.cht.com.tw/api/chtlasr/MyServlet/tlasr', params=header, data=DataBuffer[j:j+bytessend])
+            res = session.post(GWurl, headers=header_API_Key, params=param, data=DataBuffer[j:j+bytessend])
             j = j + bytessend
 
             #模擬streaming錄音時間，送0.15sec語音
             if(time.time()-gStartTime) > gTimeToSync:
-                print ' '
+                print (" ")
             else:#模擬streaming,等時間到再送
                 time.sleep(gTimeToSync-(time.time()-gStartTime))
             gTimeToSync = gTimeToSync + 0.15
@@ -76,17 +82,18 @@ def run():
                 RecognitionDone = res_json["RecognitionDone"]
                 if SpeechGot == 1 or RecognitionDone == 1  or (j == lens):
                     #步驟五:告知語音結束或已有辨識結果時，取得辨識結果
-                    header = {
+                    param = {
                         'Action':'syncData',
                         'AsrReferenceId':handle,
                         'ByteNum':0,
                         'SpeechEnd':'y'
                     }
-                    res = session.post('http://iot.cht.com.tw/api/chtlasr/MyServlet/tlasr', params=header, data="")
+                    res = session.post(GWurl, headers=header_API_Key, params=param, data="")
                     if str(res.text.encode('utf-8')).find('fail') != -1:
                         print (" No result...")
                     else:
                         print (" final %s, %f\n" % (res.text, time.time() - gStartTime))
                     j = lens+100
                     break
+            
 run()
